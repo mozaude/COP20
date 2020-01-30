@@ -86,28 +86,20 @@ COP20tree <- treemodel(COP20) # Takes District Targets Revised
 
 
 #### Exports
-list_df_19 <- c("COP19",
-                "COP19ips",
-                "COP19phases",
-                "COP19agesex",
-                "COP19tree")
+list_df_19 <- list("COP19" = COP19,
+                "COP19ips" = COP19ips,
+                "COP19phases" = COP19phases,
+                "COP19agesex" = COP19agesex,
+                "COP19tree" = COP19tree)
 
-list_df_20 <- c("COP20",
-                "COP20ips",
-                "COP20phases",
-                "COP20agesex",
-                "COP20tree")
+list_df_20 <- list("COP20" = COP20,
+                "COP20ips" = COP20ips,
+                "COP20phases" = COP20phases,
+                "COP20agesex" = COP20agesex,
+                "COP20tree" = COP20tree)
 
-for(name in list_df_19){
-  write.xlsx(x = get(name), 
-             file = "MozambiqueTargetModel_19.xlsx", 
-             sheetName = name)
-}
 
-for(name in list_df_20){
-  write.xlsx(x = get(name), 
-             file = "MozambiqueTargetModel_20.xlsx", 
-             sheetName = name)
-}
+openxlsx::write.xlsx(list_df_19, file = "MozambiqueTargetModel_19.xlsx", append=TRUE)
+openxlsx::write.xlsx(list_df_20, file = "MozambiqueTargetModel_20.xlsx", append=TRUE)
 
 
