@@ -7,8 +7,8 @@
 ####           REMOVE all pronunciation marks from data (i.e. provinicia, Zambezia, Manhica)!
 
 
-####################################################################################
-######################## Algorithm: TX_CURR TARGET SETTING ######################### 
+######################################################################################
+######################## Algorithm: TX_CURR TARGET SETTING ########################### 
 # procedure
 #   COP_target <- input
 #   for each district
@@ -22,23 +22,24 @@
 #   calculate IP, AJUDA, AgeSex Weights
 #   apply weights to target_new
 # end procedure
-####################################################################################
+######################################################################################
 
-
-####################################################################################
-################################ Libraries #########################################
-####################################################################################
-library(tidyverse)
-library(readxl)
-library(openxlsx)
-
-source("district_targets.R")
-source("subgroup_targets.R")
-source("tree_targets.R")
 
 ######################################################################################
 ########################################## MAIN ######################################
 ######################################################################################
+
+#### Load Libraries
+library(tidyverse)
+library(readxl)
+library(openxlsx)
+
+
+#### Load Source Files
+source("district_targets.R")
+source("subgroup_targets.R")
+source("tree_targets.R")
+
 
 #### Set File Paths
 xl_data <- "Inputs.xlsx"
