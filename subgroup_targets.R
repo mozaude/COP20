@@ -92,7 +92,26 @@ agesex_allocate <- function(District_Targets_Revised){
   Age_Sex_Targets_Revised <- merge(District_Targets_Revised,
                                    Province_AgeSex,
                                    by = "province") %>%
-    mutate(agesex_new_target = new_target*value)
+    mutate(agesex_new_target = new_target*value) 
+  
+  Age_Sex_Targets_Revised <- Age_Sex_Targets_Revised %>% 
+    separate(agesex, into = c("sex", "age"), sep = 1) %>%
+    mutate(sex = recode(sex, 
+                        "F" = "Female", 
+                        "M" = "Male"),
+           age = recode(age, 
+                        "_0_1" = "<01",
+                        "_1_4" = "01-04",
+                        "_5_9" = "05-09",
+                        "_10_14" = "10-14",
+                        "_15_19" = "15-19",
+                        "_20_24" = "20-24",
+                        "_25_29" = "25-29",
+                        "_30_34" = "30-34",
+                        "_35_39" = "35-39",
+                        "_40_44" = "40-44",
+                        "_45_49" = "45-49",
+                        "_50" = "50+"))
   
   ## b) Checks
   cat("\nDoes Age-Sex allocation match COP target?", sum(Age_Sex_Targets_Revised$agesex_new_target))
