@@ -7,8 +7,8 @@
 ####           REMOVE all pronunciation marks from data (i.e. provinicia, Zambezia, Manhica)!
 
 
-######################################################################################
-######################## Algorithm: TX_CURR TARGET SETTING ########################### 
+####################################################################################
+######################## Algorithm: TX_CURR TARGET SETTING ######################### 
 # procedure
 #   COP_target <- input
 #   for each district
@@ -22,20 +22,18 @@
 #   calculate IP, AJUDA, AgeSex Weights
 #   apply weights to target_new
 # end procedure
-######################################################################################
+####################################################################################
 
 
 ######################################################################################
 ########################################## MAIN ######################################
 ######################################################################################
 
-#### Load Libraries
+#### Libraries
 library(tidyverse)
 library(readxl)
 library(openxlsx)
 
-
-#### Load Source Files
 source("district_targets.R")
 source("subgroup_targets.R")
 source("tree_targets.R")
@@ -102,5 +100,3 @@ list_df_20 <- list("COP20" = COP20,
 
 openxlsx::write.xlsx(list_df_19, file = "MozambiqueTargetModel_19.xlsx", append=TRUE)
 openxlsx::write.xlsx(list_df_20, file = "MozambiqueTargetModel_20.xlsx", append=TRUE)
-
-
