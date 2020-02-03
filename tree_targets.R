@@ -23,12 +23,12 @@
 
 treemodel <- function(District_Targets_Revised){
   
-  ## a) District_Targets_Revised + IP Weights
   District_IPWeights_long <- pivot_longer(District_IPWeights, 
                                           cols = c("moh", "ip"), 
                                           names_to = "ip_type") %>%
     select(-province) %>%
     rename(ip_weight = "value")
+  
   
   catagoryoptioncombo_IP <- merge(District_Targets_Revised, 
                                   District_IPWeights_long, 
@@ -44,31 +44,50 @@ treemodel <- function(District_Targets_Revised){
   cat("Does IP allocation match COP target?", sum(catagoryoptioncombo_IP$ip_alloc, na.rm = T))
   
   ## c) + AJUDA Weights
+  
   District_TXCURR_Summary <- District_TX_CurrR_FY19Q4 %>% 
-    group_by(district) %>% 
-    summarise(txcurr_result = sum(value, 
-                                  na.rm = T)) %>% 
+    mutate(ip_type = ifelse(str_detect(attribute, "PEPFAR"), "ip", "moh")) %>%
+    group_by(district, ip_type) %>% 
+    summarise(district_PEPFAR_txcurrR = sum(value, 
+                                            na.rm = T)) %>% 
     ungroup
   
-  District_TXCURR_Summary <- merge(District_TXCURR_Summary, 
-                                   District_TX_CurrT_FY19Q4, 
-                                   by.x = "district",
-                                   by.y = "psnu")
+  # Filter just PEPFAR for distribution, calculate weights for each phase
+  District_TXCURR_Summary_PEPFAR <- filter(District_TXCURR_Summary, 
+                                           ip_type == "ip")
   
-  AJUDA_Misau_TX_CURR <- merge(District_TX_CurrR_FY19Q4, 
-                               District_TXCURR_Summary, 
-                               by = "district") %>%
-    mutate(phase_weight = value/txcurr_result)
+  District_TX_CurrR_FY19Q4_PEPFAR <- filter(District_TX_CurrR_FY19Q4,
+                                            str_detect(attribute, "PEPFAR"))
   
+  District_PEPFAR_AJUDAWeight <- merge(District_TXCURR_Summary_PEPFAR, 
+                                       District_TX_CurrR_FY19Q4_PEPFAR, 
+                                       by = "district") %>%
+    mutate(phase_weight = value/district_PEPFAR_txcurrR)
+  
+  
+  # Filter just PEPFAR for distribution, calculate weights for each phase (weight should be 1)
+  District_TXCURR_Summary_MISAU <- filter(District_TXCURR_Summary, 
+                                          ip_type == "moh")
+  
+  District_TX_CurrR_FY19Q4_MISAU <- filter(District_TX_CurrR_FY19Q4,
+                                           str_detect(attribute, "MISAU"))
+  
+  District_MISAU_AJUDAWeight <- merge(District_TXCURR_Summary_MISAU, 
+                                      District_TX_CurrR_FY19Q4_MISAU, 
+                                      by = "district") %>%
+    mutate(phase_weight = value/district_PEPFAR_txcurrR)
+  
+  # Append PEPFAR and MISAU phase weights
+  AJUDA_Misau_TX_CURR <- rbind(District_MISAU_AJUDAWeight, District_PEPFAR_AJUDAWeight)
   
   catagoryoptioncombo_IP_AJUDA <- merge(catagoryoptioncombo_IP, 
-                                        AJUDA_Misau_TX_CURR[, c("district", "attribute", "phase_weight")], 
-                                        by = "district") %>%
+                                        AJUDA_Misau_TX_CURR[, c("district", "attribute", "ip_type", "phase_weight")], 
+                                        by = c("district", "ip_type")) %>%
     mutate(phase_alloc = ip_alloc*phase_weight)
   
   ## d) Check
   catagoryoptioncombo_IP_AJUDA %>% 
-    group_by(province, district, ip_type) %>% 
+    group_by(province, district) %>% 
     summarise(total = sum(phase_weight))
   
   cat("\nDoes Phase allocation match COP target?", sum(catagoryoptioncombo_IP_AJUDA$phase_alloc, na.rm = T))
@@ -77,14 +96,15 @@ treemodel <- function(District_Targets_Revised){
   Age_Sex_Targets_Revised <- agesex_allocate(District_Targets_Revised)
   
   catagoryoptioncombo_IP_AJUDA_AGESEX <- merge(catagoryoptioncombo_IP_AJUDA, 
-                                               Age_Sex_Targets_Revised[,c("district", "agesex", "value")],
+                                               Age_Sex_Targets_Revised[,c("district", "age", "sex", "value")],
                                                by = "district",
                                                all = T)%>%
     select(c("province", 
              "district",
              "attribute",
              "ip_type",
-             "agesex",
+             "age",
+             "sex",
              #"plhiv", 
              #"txcurr_result", 
              #"txcurr_target", 
@@ -99,7 +119,7 @@ treemodel <- function(District_Targets_Revised){
   
   ## f) Checks
   catagoryoptioncombo_IP_AJUDA_AGESEX %>% 
-    group_by(province, district, ip_type, attribute) %>% 
+    group_by(province, district, ip_type) %>% 
     summarise(total = sum(agesex_weight))
   
   cat("\nDoes Age-Sex allocation match COP target?", sum(catagoryoptioncombo_IP_AJUDA_AGESEX$agesex_alloc, na.rm = T))
@@ -110,6 +130,7 @@ treemodel <- function(District_Targets_Revised){
   
   ## a) Checks
   cat("\nDoes linked allocation match COP target?", sum(final$final_target, na.rm = T))
+  
   
   return(final)
   
