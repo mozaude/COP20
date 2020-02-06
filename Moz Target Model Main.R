@@ -36,6 +36,7 @@ library(tidyverse)
 library(readxl)
 library(openxlsx)
 
+
 source("district_targets.R")
 source("subgroup_targets.R")
 source("tree_targets.R")
@@ -80,7 +81,11 @@ District_PLHIV <- District_PLHIV %>%
 District_PLHIV <- District_PLHIV %>% 
   mutate(province = recode(District_PLHIV$province,
                            Maputo = "Maputo Provincia",
-                           `Cidade De Maputo` = "Maputo Cidade"))
+                           `Cidade De Maputo` = "Maputo Cidade"),
+         district = recode(District_PLHIV$district,
+                           `Ilha De Moçambique` = "Ilha De Mozambique",
+                           Manhiça = "Manhica")
+         )
 
 
 #### Import Datapack TX (to calculate Age-Sex Growth Rates)
@@ -97,13 +102,17 @@ TX_DataPack_Tab <- TX_DataPack_Tab %>%
          "sex",
          "txcurr_fy20_target" = "tx_curr.n.age_sex_hivstatus.t_1")
 
-TX_DataPack_Tab <- TX_DataPack_Tab %>% 
-  mutate(province = recode(TX_DataPack_Tab$province,
-                           Maputo = "Maputo Provincia",
-                           `Cidade De Maputo` = "Maputo Cidade"))
 
 TX_DataPack_Tab$district <- gsub("\\[.*$", "", TX_DataPack_Tab$district)
 TX_DataPack_Tab$district <- trimws(TX_DataPack_Tab$district, which = "right")
+
+TX_DataPack_Tab <- TX_DataPack_Tab %>% 
+  mutate(province = recode(TX_DataPack_Tab$province,
+                           Maputo = "Maputo Provincia",
+                           `Cidade De Maputo` = "Maputo Cidade"),
+         district = recode(TX_DataPack_Tab$district,
+                           `Ilha De Moçambique` = "Ilha De Mozambique",
+                           Manhiça = "Manhica"))
 
 #### Get Overall COP Target
 OU_TXCURR_Target_COP19 <- Province_Targets[[which(Province_Targets$province=="TOTAL"),3]]
@@ -117,9 +126,20 @@ cat("TX_CURR COP20 Target is", OU_TXCURR_Target_COP20)
 COP19_Province_Targets <- Province_Targets %>% 
   select(c("province", "target" = "fy20cop19targetsadj"))
 
+District_TX_CurrT_FY19Q4 <- District_TX_CurrT_FY19Q4 %>% 
+  mutate(snu1 = recode(District_TX_CurrT_FY19Q4$snu1,
+                Maputo = "Maputo Provincia",
+                `Cidade De Maputo` = "Maputo Cidade"),
+         psnu = recode(District_TX_CurrT_FY19Q4$psnu,
+                           `Ilha De Moçambique` = "Ilha De Mozambique",
+                           Manhiça = "Manhica"))
+
 
 #### Run Functions for COP19
-COP19 <- targetsetter(COP19_Province_Targets, District_TX_CurrT_FY19Q4, District_PLHIV) # District Targets Revised & FY19Q4 Targets
+COP19 <- targetsetter(COP19_Province_Targets, 
+                      District_TX_CurrT_FY19Q4, 
+                      District_TX_CurrR_FY19Q4, 
+                      District_PLHIV) # District Targets Revised & FY19Q4 Targets
 COP19ips <- ip_allocate(COP19) # Takes District Targets Revised
 COP19phases <- phase_allocate(COP19ips) # IP Targets Revised
 COP19agesex <- agesex_allocate(COP19) # Takes District Targets Revised
@@ -135,7 +155,10 @@ District_TX_CurrT_COP19 <- COP19 %>%
 
 
 #### Run Functions for COP20
-COP20 <- targetsetter(COP20_Province_Targets, District_TX_CurrT_COP19, District_PLHIV) # District Targets Revised & COP19 Targets
+COP20 <- targetsetter(COP20_Province_Targets, 
+                      District_TX_CurrT_COP19, 
+                      District_TX_CurrR_FY19Q4, 
+                      District_PLHIV) # District Targets Revised & COP19 Targets
 COP20ips <- ip_allocate(COP20) # Takes District Targets Revised
 COP20phases <- phase_allocate(COP20ips) # IP Targets Revised
 COP20agesex <- agesex_allocate(COP20) # Takes District Targets Revised
@@ -171,3 +194,21 @@ list_df_20 <- list("COP20" = COP20,
 
 openxlsx::write.xlsx(list_df_19, file = "MozambiqueTargetModel_19.xlsx", append=TRUE)
 openxlsx::write.xlsx(list_df_20, file = "MozambiqueTargetModel_20.xlsx", append=TRUE)
+
+
+
+
+#### File Checks province, district
+
+## 1) Datapack used as source for province and districts names
+province_names <- unique(TX_DataPack_Tab$province)
+district_names <- unique(TX_DataPack_Tab$district)
+
+setequal(province_names,COP19_Province_Targets$province)
+unique(COP19_Province_Targets$province)
+unique(District_TX_CurrT_FY19Q4$snu1)
+
+unique(TX_DataPack_Tab$district)
+unique(District_PLHIV$district)
+unique(District_TX_CurrT_FY19Q4$psnu)
+unique(District_TX_CurrR_FY19Q4$district)
